@@ -1,0 +1,48 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+networks:
+  proxy:
+    external: true
+
+services:
+
+  db:
+    image: perceval:10007/postgres
+    restart: always
+    volumes:
+      - "/home/pi/volumes-local/postgres:/var/lib/postgresql/data" 
+    ports:
+      - 10004:5432 
+    deploy:
+      placement:
+        constraints: 
+          - node.labels.postgres == true
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.postgres.rule=Host(`postgres.home`)"
+        - "traefik.http.routers.postgres.entrypoints=web"
+        - "traefik.http.services.postgres.loadbalancer.server.port=5432"
+        - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 10005:8080
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.adminer.rule=Host(`adminer.home`)"
+        - "traefik.http.routers.adminer.entrypoints=web"
+        - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+        - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+

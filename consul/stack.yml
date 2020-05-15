@@ -1,0 +1,83 @@
+---
+version: '3.3'
+networks:
+  proxy:
+    external: true
+  consul:
+    driver: overlay
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.0.0/16
+
+services:
+  # Deploy the consul server instances
+  server:
+    image: consul:latest
+    networks:
+      proxy:
+      consul:
+        aliases:
+          - consul.server
+    # Start the consul server with the given configuration
+    command: "consul agent -client 0.0.0.0 -config-file /consul/config/config.json"
+    # Expose port 8500 so we can access the UI and allow connections across datacenters.
+    ports:
+      - target: 8600
+        published: 8600
+      - target: 8500
+        published: 8500
+    # Mount the configuration and data volumes to the container.
+    volumes:
+      - /home/pi/volumes-shared/consul-server:/consul/config
+      - /home/pi/volumes-local/consul-server/data:/consul/data
+    # Deploy the consul server on all servers which are managers.
+    # Use DNS Round Robin instead VIP for discovery. This ensures we get all running
+    # consul server instances when querying consul.server
+    deploy:
+      mode: global
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 30s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.consul.rule=Host(`consul.home`)"
+        - "traefik.http.routers.consul.entrypoints=web"
+        - "traefik.http.services.consul.loadbalancer.server.port=8500"
+        - "traefik.docker.network=proxy"
+  # Deploy the consul agent instances
+  agent:
+    image: consul:latest
+    networks:
+      consul:
+        aliases:
+          - consul.server
+     # Start the consul agent with the given configuration          
+    command: "consul agent -client 0.0.0.0 -config-file /consul/config/config.json"
+# Mount the configuration and data volumes to the container.
+    volumes:
+      - /home/pi/volumes-shared/consul-agent:/consul/config
+      - /home/pi/volumes-local/consul-agent/data:/consul/data
+    # Deploy the consul agent on all servers which are workers.
+    # Use DNS Round Robin instead VIP for discovery.  
+    deploy:
+      mode: global
+      update_config:
+        parallelism: 1
+        failure_action: rollback
+        delay: 30s
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      placement:
+        constraints:
+          - node.role == worker

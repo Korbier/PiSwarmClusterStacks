@@ -1,0 +1,32 @@
+version: '3'
+
+networks:
+  proxy:
+    external: true
+
+services:
+  server:
+    image: perceval:10007/jenkins
+    ports:
+      - "10000:8080"
+      - "10001:50000"
+    volumes: 
+      - /home/pi/volumes-local/jenkins/:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      - /home/pi/volumes-shared/maven:/root/.m2
+    user: root
+    deploy: 
+      placement: 
+        constraints:
+          - node.labels.jenkins == true 
+          - node.role == worker
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.jenkins.rule=Host(`jenkins.home`)"
+        - "traefik.http.routers.jenkins.entrypoints=web"
+        - "traefik.http.services.jenkins.loadbalancer.server.port=8080"
+        - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+

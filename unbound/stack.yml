@@ -1,0 +1,17 @@
+version: '3.1'
+
+services:
+
+  server:
+    image: klutchell/unbound 
+    restart: always
+    volumes:
+      - "/home/pi/volumes-shared/unbound:/opt/unbound/etc/unbound"
+    ports:
+      - 53:5053/tcp
+      - 53:5053/udp
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+ 
