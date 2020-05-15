@@ -8,7 +8,7 @@ networks:
 services:
 
   db:
-    image: perceval:10007/postgres
+    image: postgres
     restart: always
     volumes:
       - "/home/pi/volumes-local/postgres:/var/lib/postgresql/data" 
