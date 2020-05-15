@@ -15,12 +15,16 @@ services:
       - "--providers.docker.swarmMode=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.forwarding.address=:9999"
     ports:
       - "80:80"
       - "8080:8080"
-      - "443:443" 
+      - "443:443"
+      - "9999:9999" 
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/home/pi/volumes-shared/traefik:/etc/traefik"
     networks:
       - proxy
     deploy:

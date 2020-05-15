@@ -1,0 +1,31 @@
+version: '3'
+
+networks:
+  proxy:
+    external: true
+
+services:
+  server:
+    image: perceval:10007/murmur
+    build: .
+    ports:
+      - "10002:64738"
+    volumes: 
+      - /home/pi/volumes-shared/murmur:/etc/murmur
+    deploy: 
+      placement: 
+        constraints: 
+          - node.role == worker 
+      labels:
+        - "traefik.enable=true"
+#        - "traefik.http.routers.murmur.rule=Host(`murmur.home`)"
+#        - "traefik.http.routers.murmur.entrypoints=forwarding"
+#        - "traefik.http.services.murmur.loadbalancer.server.port=64738"
+        - "traefik.docker.network=proxy"
+        - "traefik.tcp.routers.murmur.rule=HostSNI(`*`)"
+        - "traefik.tcp.routers.murmur.entrypoints=forwarding" 
+        - "traefik.tcp.services.murmur.loadbalancer.server.port=64738"
+        - "traefik.tcp.routers.murmur.tls.passthrough=true"
+    networks:
+      - proxy
+
