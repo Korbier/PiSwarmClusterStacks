@@ -31,6 +31,12 @@ services:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.treafik.rule=Host(`traefik.home`)"
+        - "traefik.http.routers.traefik.entrypoints=web"
+        - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+        - "traefik.docker.network=proxy"
 
   whoami:
     image: "containous/whoami"
